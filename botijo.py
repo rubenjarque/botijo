@@ -1,30 +1,20 @@
-import time, re, json
+import time, re, json, bot_config, plugins, importlib
 from slackclient import SlackClient
-from pprint import pprint
 
 def getReceiverFromMessage( message ):
     cleanword=re.sub('[@<>:]', '', message)
     return cleanword
 
-def saluda( chan, user ):
-    print "send saluda message"
-    chan.send_message("Hola " + user["name"] + "!")
-    print "sent saluda message"
-    
-def despide( chan, user ):
-    chan.send_message("Que te follen " + user["name"])
+def sendAction( action, chan, user, words ):
+    if action in plugins.actions:
+        action_config = plugins.actions[action]
+        module = importlib.import_module(action_config['module'])
+        getattr(module, action_config['method'])(chan, user, words)
+    else:
+        chan.send_message("I'm sorry, but I don't understand that")
 
-def sendAction( action, chan, user ):
-    print "choosing action for " + action
-    if (action == "saluda"):
-        saluda(chan, user)
-    if (action == "despidete"):
-        despide(chan, user)
-
-token = "xoxb-21267660148-Lj0G7yBSjMq9UxOwhJ6uVQnw"
-botijo_user = "U0M7VKE4C"
-actions = ["saluda", "despidete"]
-sc = SlackClient(token)
+botijo_user = bot_config.bot_user
+sc = SlackClient(bot_config.bot_token)
 
 if sc.rtm_connect():
     while True:
@@ -37,17 +27,13 @@ if sc.rtm_connect():
                     
                     words = message.split()
                     if (getReceiverFromMessage(words[0]) == botijo_user):
-                        print "Este es un mensaje para botijo"
+                        print "This is a message to botijo"
                         userinfo = json.loads(sc.api_call("users.info", user=evt["user"]))
-                        pprint(userinfo["user"]["name"])
                         
                         chan = sc.server.channels.find(evt["channel"])
-                        if ((len(words) > 0) & (words[1] in actions)):
-                            sendAction(words[1], chan, userinfo["user"])
+                        if ((len(words) > 1)):
+                            sendAction(words[1], chan, userinfo["user"], words)
                         else:
-                            chan.send_message("Lo siento " + userinfo["user"]["name"] + ", pero no te entiendo")
-                    
-                    #chan = sc.server.channels.find(evt["channel"])
-                    #if chan:
-                        #chan.send_message(message)
+                            chan.send_message("What?")
+
     time.sleep(3)

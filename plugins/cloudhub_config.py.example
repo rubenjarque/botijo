@@ -1,0 +1,9 @@
+username='example'
+password='123456'
+environments = {
+                'dev' : ['dev-private', 'dev-public'],
+                'test' : ['test-private', 'test-public'],
+                'staging' : ['staging-private', 'staging-public'],
+                'thf' : ['testhf-private', 'testhf-public'],
+                'prod' : ['prd-private', 'Production']
+                }
